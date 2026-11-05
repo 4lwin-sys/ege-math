@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ЕГЭ: профиль</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+:root{--bg:var(--tg-theme-bg-color,#fff);--tx:var(--tg-theme-text-color,#14161a);--hint:var(--tg-theme-hint-color,#6b7280);--card:var(--tg-theme-secondary-bg-color,#f1f2f4);--ac:#ff7a1a;--ok:#1f9d55;--bad:#d64545}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{max-width:520px;margin:0 auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));padding-top:calc(16px + env(safe-area-inset-top,0px))}
+h1,h2{font-family:Unbounded,system-ui,sans-serif;font-weight:800;line-height:1.15;margin:0 0 12px}
+h1{font-size:24px}h2{font-size:19px}
+.hint{color:var(--hint);font-size:14px}
+.hero{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:2px solid transparent;background:var(--card);color:inherit;border-radius:18px;padding:14px;margin-bottom:10px;font:inherit;cursor:pointer}
+.hero:focus-visible,.btn:focus-visible,input:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.hero .ava{font-size:34px;width:60px;height:60px;border-radius:16px;display:grid;place-items:center;flex:none}
+.hero b{display:block;font-family:Unbounded,system-ui,sans-serif;font-size:15px}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.pill{background:var(--card);border-radius:999px;padding:6px 12px;font-weight:600;font-size:14px}
+.sp{flex:1}
+.say{display:flex;gap:12px;align-items:flex-start;margin:8px 0 20px}
+.say .ava{font-size:30px;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex:none}
+.bubble{background:var(--card);border-radius:4px 18px 18px 18px;padding:12px 14px;font-weight:500}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font:600 16px system-ui,sans-serif;background:var(--ac);color:#fff;cursor:pointer;margin-top:10px}
+.btn.alt{background:var(--card);color:var(--tx)}
+.btn:active{transform:scale(.98)}
+.q{font-size:18px;margin:0 0 16px}
+input{width:100%;font:600 20px system-ui,sans-serif;padding:14px;border-radius:14px;border:2px solid var(--card);background:var(--card);color:var(--tx)}
+.fb{border-radius:14px;padding:14px;margin-top:14px;background:var(--card);border-left:6px solid var(--hint)}
+.fb.ok{border-color:var(--ok)}.fb.bad{border-color:var(--bad)}
+.prog{height:8px;border-radius:8px;background:var(--card);overflow:hidden;margin-bottom:16px}
+.prog i{display:block;height:100%;background:var(--ac);transition:width .3s}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ===== НАСТРОЙКИ =====
+const FREE_DAILY_LIMIT = 3;   // сколько задач в день бесплатно
+const XP_PER_TASK = 10;
+
+// ===== ГЕРОИ (замените на настоящих, когда будут договорённости) =====
+const HEROES = [
+  {id:'h1',name:'Громкий мотиватор',tag:'Верит в тебя сильнее, чем ты сам',ava:'📣',color:'#ff7a1a',L:{
+    hi:['Здарова! Сегодня разберём математику, как надо!','Опять ты? Отлично, работаем!','Погнали, чемпион!'],
+    ok:['ВОТ ЭТО ДА! Всё верно!','Так держать, ты машина!','Без единой ошибки, красавчик!','Вот это я понимаю — результат!'],
+    bad:['Не беда! Ошибся — значит, учишься!','Мимо, но ты же не сдаёшься?','Бывает. Разбираем и идём дальше!'],
+    limit:['Три задачи — и лимит! Хочешь ещё — бери Премиум, и вперёд!','На сегодня бесплатное кончилось. Премиум — и тренируемся без тормозов!'],
+    streak:['Серия растёт! Не вздумай её терять!','Каждый день без пропусков — вот это характер!']}},
+  {id:'h2',name:'Дерзкий рэпер',tag:'Панчи на каждую ошибку',ava:'🎤',color:'#7c4dff',L:{
+    hi:['Йоу, школьник, готов к матеше?','Микрофон включён, формулы на столе.','Ну что, зачитаем вероятность?'],
+    ok:['Бит попал в ноты — ответ верный!','Чисто, как первый трек. Респект.','Вот это флоу, задача разорвана!'],
+    bad:['Промах, бро. Но у хитов тоже были неудачные дубли.','Мимо ноты. Слушай разбор и повторяй.','Ошибка — это просто плохой дубль.'],
+    limit:['Бесплатный тираж закончился. Хочешь продолжение альбома — Премиум.','Три трека за день — лимит. Дальше только по подписке.'],
+    streak:['Серия горит, как стадион на концерте.','Дни идут подряд — это уже дискография.']}},
+  {id:'h3',name:'Мега-челленджер',tag:'Любую задачу превращает в испытание',ava:'🏆',color:'#0ea5a4',L:{
+    hi:['Челлендж принят? Сегодня задач много, а времени мало.','Готов к испытанию? Начинаем!','Новый день — новый челлендж.'],
+    ok:['Испытание пройдено! +10 очков.','Ты справился — приз твой!','Правильно! Следующий уровень ждёт.'],
+    bad:['Испытание провалено, но реванш разрешён.','Не вышло. Запоминай разбор — и в следующий раз победа.','Почти. Победители тоже проигрывают раунды.'],
+    limit:['Бесплатные попытки закончились. Откроешь Премиум — получишь безлимит.','Раунд окончен. Продолжение — в Премиуме.'],
+    streak:['Серия не прерывается — так держать!','Ещё один день в зачёт. Рекорд близко.']}}
+];
+
+// ===== ЗАДАЧИ (ответ обязательно сверьте с банком ФИПИ) =====
+const TASKS = [
+ {q:'Монету бросают два раза. Найдите вероятность того, что орёл выпадет ровно один раз.',a:0.5,
+  hint:'Выпишите все исходы: ОО, ОР, РО, РР.',ex:'Всего 4 равновозможных исхода, подходят 2 (ОР и РО): $\\frac{2}{4}=0{,}5$.'},
+ {q:'В классе 25 учащихся, из них 10 девочек. Для дежурства случайно выбирают одного ученика. Найдите вероятность того, что это мальчик.',a:0.6,
+  hint:'Сначала найдите, сколько в классе мальчиков.',ex:'Мальчиков $25-10=15$, вероятность $\\frac{15}{25}=0{,}6$.'},
+ {q:'Игральную кость бросают дважды. Найдите вероятность того, что оба раза выпало число очков, большее 3.',a:0.25,
+  hint:'Для одного броска подходят 4, 5, 6. События независимы.',ex:'Для одного броска $\\frac{3}{6}=0{,}5$, для двух подряд $0{,}5\\cdot0{,}5=0{,}25$.'},
+ {q:'Вероятность того, что новый тостер прослужит больше года, равна 0,96. Вероятность того, что он прослужит больше двух лет, равна 0,83. Найдите вероятность того, что он прослужит меньше двух лет, но больше года.',a:0.13,
+  hint:'Событие «больше года» включает «больше двух лет».',ex:'$0{,}96-0{,}83=0{,}13$.'},
+ {q:'Стрелок три раза стреляет по мишени. Вероятность попадания при каждом выстреле равна 0,5. Найдите вероятность того, что он попадёт ровно два раза.',a:0.375,
+  hint:'Всего исходов $2^3=8$. Сколькими способами выбрать 2 попадания из 3?',ex:'Подходят 3 исхода (ППМ, ПМП, МПП) из 8: $\\frac{3}{8}=0{,}375$.'}
+];
+
+// ===== ХРАНИЛИЩЕ: Telegram CloudStorage, а вне Telegram — localStorage =====
+const tg = window.Telegram && window.Telegram.WebApp;
+const inTg = !!(tg && tg.initData && tg.CloudStorage);
+if (tg) { tg.ready(); tg.expand(); }
+const store = {
+  get: () => new Promise(r => {
+    try {
+      if (inTg) tg.CloudStorage.getItem('s', (e, v) => { try { r(JSON.parse(v)); } catch (x) { r(null); } });
+      else r(JSON.parse(localStorage.getItem('s')));
+    } catch (x) { r(null); }
+  }),
+  set: s => { const v = JSON.stringify(s); try { if (inTg) tg.CloudStorage.setItem('s', v); else localStorage.setItem('s', v); } catch (x) {} }
+};
+
+// ===== СОСТОЯНИЕ =====
+let S = {hero:null, xp:0, streak:0, last:'', day:'', n:0, idx:0, interest:false};
+const lastLine = {};
+const $app = document.getElementById('app');
+const dayStr = d => d.toLocaleDateString('sv');
+const today = () => dayStr(new Date());
+const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayStr(d); };
+const hero = () => HEROES.find(h => h.id === S.hero);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const save = () => store.set(S);
+function say(kind) {
+  const arr = hero().L[kind], key = S.hero + kind;
+  let i; do { i = Math.floor(Math.random() * arr.length); } while (arr.length > 1 && i === lastLine[key]);
+  lastLine[key] = i; return arr[i];
+}
+function mount(html) {
+  $app.innerHTML = html;
+  if (window.renderMathInElement) renderMathInElement($app, {delimiters:[{left:'$',right:'$',display:false}]});
+}
+function setAccent() { document.documentElement.style.setProperty('--ac', hero() ? hero().color : '#ff7a1a'); }
+const bar = () => `<div class="bar"><span class="pill">🔥 ${S.streak}</span><span class="pill">⭐ ${S.xp} XP</span><span class="sp"></span><span class="pill">${Math.min(S.n, FREE_DAILY_LIMIT)}/${FREE_DAILY_LIMIT} сегодня</span></div>`;
+const speech = t => `<div class="say"><div class="ava" style="background:${hero().color}22">${hero().ava}</div><div class="bubble">${esc(t)}</div></div>`;
+
+// ===== ЭКРАНЫ =====
+function heroScreen() {
+  mount(`<h1>Выбери преподавателя</h1><p class="hint">Он будет готовить тебя к ЕГЭ по профильной математике. Сменить можно в любой момент.</p>` +
+    HEROES.map(h => `<button class="hero" data-id="${h.id}"><span class="ava" style="background:${h.color}22">${h.ava}</span><span><b>${esc(h.name)}</b><span class="hint">${esc(h.tag)}</span></span></button>`).join(''));
+  $app.querySelectorAll('.hero').forEach(b => b.onclick = () => { S.hero = b.dataset.id; save(); setAccent(); home(); });
+}
+function home() {
+  setAccent();
+  const name = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : '';
+  mount(`${bar()}<h1>${name ? esc(name) + ', привет!' : 'Привет!'}</h1>${speech(say('hi'))}
+    <button class="btn" id="go">Начать задачу</button><button class="btn alt" id="sw">Сменить преподавателя</button>`);
+  document.getElementById('go').onclick = task;
+  document.getElementById('sw').onclick = heroScreen;
+}
+function limitScreen() {
+  mount(`${bar()}<h2>Бесплатный лимит на сегодня исчерпан</h2>${speech(say('limit'))}
+    <button class="btn" id="pr">Премиум: безлимит</button><button class="btn alt" id="hm">На главную</button>
+    <p class="hint">Завтра снова будет ${FREE_DAILY_LIMIT} бесплатные задачи.</p>`);
+  document.getElementById('pr').onclick = () => {
+    S.interest = true; save();
+    const m = 'Премиум скоро появится. Мы записали, что он тебе интересен.';
+    tg && tg.showAlert ? tg.showAlert(m) : alert(m);
+  };
+  document.getElementById('hm').onclick = home;
+}
+function task() {
+  if (S.day !== today()) { S.day = today(); S.n = 0; }
+  if (S.n >= FREE_DAILY_LIMIT) return limitScreen();
+  const t = TASKS[S.idx % TASKS.length];
+  mount(`${bar()}<div class="prog"><i style="width:${(S.n / FREE_DAILY_LIMIT) * 100}%"></i></div>
+    <p class="q">${t.q}</p><input id="ans" inputmode="decimal" autocomplete="off" placeholder="Ответ (например, 0,25)">
+    <button class="btn" id="ck">Проверить</button><button class="btn alt" id="ht">Подсказка</button><div id="out"></div>`);
+  const inp = document.getElementById('ans'), out = document.getElementById('out');
+  document.getElementById('ht').onclick = () => { out.innerHTML = `<div class="fb">💡 ${t.hint}</div>`; renderMathInElement && renderMathInElement(out, {delimiters:[{left:'$',right:'$',display:false}]}); };
+  document.getElementById('ck').onclick = () => {
+    const v = parseFloat(inp.value.replace(',', '.').trim());
+    if (isNaN(v)) { out.innerHTML = '<div class="fb bad">Введите число, например 0,25.</div>'; return; }
+    const good = Math.abs(v - t.a) < 1e-9;
+    if (S.last !== today()) { S.streak = S.last === yesterday() ? S.streak + 1 : 1; S.last = today(); }
+    S.n++; S.idx++;
+    if (good) S.xp += XP_PER_TASK;
+    save();
+    let line = say(good ? 'ok' : 'bad');
+    if (good && S.streak >= 3 && S.n === 1) line += ' ' + say('streak');
+    const ans = String(t.a).replace('.', ',');
+    out.innerHTML = `<div class="fb ${good ? 'ok' : 'bad'}"><b>${good ? 'Верно! +' + XP_PER_TASK + ' XP' : 'Неверно. Ответ: ' + ans}</b><br>${esc(line)}<br><span class="hint">${t.ex}</span></div><button class="btn" id="nx">Дальше</button>`;
+    renderMathInElement && renderMathInElement(out, {delimiters:[{left:'$',right:'$',display:false}]});
+    document.getElementById('ck').disabled = true; inp.disabled = true;
+    document.getElementById('nx').onclick = () => (S.n >= FREE_DAILY_LIMIT ? limitScreen() : task());
+  };
+}
+
+// ===== СТАРТ =====
+store.get().then(v => { if (v) S = Object.assign(S, v); S.hero && hero() ? home() : heroScreen(); });
+</script>
+</body>
+</html>
